@@ -6,430 +6,336 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>gSap Example for Infinite Scroll</title>
-    <style>
-        @import url("https://fonts.googleapis.com/css2?family=Roboto&display=swap");
-
-        html,
-        body {
-            height: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        html {
-            font-size: 1vw;
-        }
-
-        body {
-            padding: 0;
-            margin: 0;
-            cursor: -webkit-grab;
-            cursor: grab;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-
-        .grid {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 150%;
-            height: 150%;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-        }
-
-        .grid>div {
-            position: relative;
-        }
-
-        canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-        }
-
-        figure {
-            position: absolute;
-            inset: 0.5rem;
-            padding: 0;
-            margin: 0;
-        }
-    </style>
 </head>
 
 <body>
-    <div id="root">
-        <div class="grid js-grid">
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-3.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-2.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-1.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-3.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-2.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-1.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-3.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-2.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-1.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-3.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-2.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-1.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-1.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-3.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-            <div>
-                <figure class="js-plane" data-src="https://assets.codepen.io/58281/lama-2.jpg?width=1100&format=auto">
-                </figure>
-            </div>
-        </div>
-        <div class="page js-page"></div>
-    </div>
+    <div id="imageContainer"></div>
 </body>
-<script src="https://unpkg.co/gsap@3/dist/gsap.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/virtual-scroll@2.1.1/lib/virtualscroll.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.3.4/gsap.min.js"></script>
+<script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/Draggable3.min.js"></script>
+<script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/InertiaPlugin.min.js"></script>
 <script type="text/javascript">
-    console.clear()
+    console.clear();
 
-    let ww = window.innerWidth
-    let wh = window.innerHeight
+    gsap.registerPlugin(Draggable, InertiaPlugin);
 
-    const isFirefox = navigator.userAgent.indexOf('Firefox') > -1
-    const isWindows = navigator.appVersion.indexOf("Win") != -1
-
-    const mouseMultiplier = .6
-    const firefoxMultiplier = 20
-    
-    const multipliers = {
-        mouse: isWindows ? mouseMultiplier * 2 : mouseMultiplier,
-        firefox: isWindows ? firefoxMultiplier * 2 : firefoxMultiplier
+    // from https://stackoverflow.com/a/32751487/2065702
+    function moveArrayIndex(array, oldIndex, newIndex) {
+        if (newIndex >= array.length) {
+            newIndex = array.length - 1;
+        }
+        array.splice(newIndex, 0, array.splice(oldIndex, 1)[0]);
+        return array;
     }
 
-    /** CORE **/
-    class Core {
 
-        constructor() {
-            this.tx = 0
-            this.ty = 0
-            this.cx = 0
-            this.cy = 0
+    function checkPositions(elem) {
+        // Find the location in our array of the element
+        let rowIndex = -1,
+            imgIndex = -1;
+        imgRep.forEach((row, i) => {
+            row.forEach((img, j) => {
+                if (elem.isSameNode(img)) {
+                    rowIndex = i;
+                    imgIndex = j;
+                }
+            });
+        });
 
-            this.diff = 0
+        // Element not found, return
+        if (rowIndex === -1)
+            return;
 
-            this.wheel = { x: 0, y: 0 }
-            this.on = { x: 0, y: 0 }
-            this.max = { x: 0, y: 0 }
+        // Reposition elements as necessary so that our element is in the center
+        // Reposition the rows as necessary
+        if (rowIndex < rowMidIndex) {
+            for (let i = rowIndex; i < rowMidIndex; i++) {
+                // Update the row's actual position
+                let rowY = gsap.getProperty(rowArray[0], "y");
 
-            this.isDragging = false
+                if (rowArray.length % 2 === 1) { // Odd number of rows means we have to handle offset
+                    let row = rowArray[rowArray.length - 1];
+                    if (row.dataset.offset === "true") {
+                        gsap.set(row, { y: rowY - gutter - boxHeight, x: "+=" + boxWidth / 2 });
+                        row.dataset.offset = "false";
+                    } else {
+                        gsap.set(row, { y: rowY - gutter - boxHeight, x: "-=" + boxWidth / 2 });
+                        row.dataset.offset = "true";
+                    }
+                } else { // Equal number of rows; don't have to handle offset
+                    gsap.set(rowArray[rowArray.length - 1], { y: rowY - gutter - boxHeight });
+                }
 
-            this.tl = gsap.timeline({ paused: true })
-
-            this.el = document.querySelector('.js-grid')
-
-            /** GL specifics **/
-            this.scene = new THREE.Scene()
-
-            this.camera = new THREE.OrthographicCamera(
-                ww / -2, ww / 2, wh / 2, wh / -2, 1, 1000
-            )
-            this.camera.lookAt(this.scene.position)
-            this.camera.position.z = 1
-
-            this.renderer = new THREE.WebGLRenderer({ antialias: true })
-            this.renderer.setSize(ww, wh)
-            this.renderer.setPixelRatio(
-                gsap.utils.clamp(1, 1.5, window.devicePixelRatio)
-            )
-
-            document.body.appendChild(this.renderer.domElement)
-            /** Gl specifics end **/
-
-            this.addPlanes()
-            this.addEvents()
-            this.resize()
-        }
-
-        addEvents() {
-            gsap.ticker.add(this.tick)
-
-            window.addEventListener('mousemove', this.onMouseMove)
-            window.addEventListener('mousedown', this.onMouseDown)
-            window.addEventListener('mouseup', this.onMouseUp)
-            window.addEventListener('wheel', this.onWheel)
-        }
-
-        addPlanes() {
-            const planes = [...document.querySelectorAll('.js-plane')]
-
-            this.planes = planes.map((el, i) => {
-                const plane = new Plane()
-                plane.init(el, i)
-
-                this.scene.add(plane)
-
-                return plane
-            })
-        }
-
-        tick = () => {
-            const xDiff = this.tx - this.cx
-            const yDiff = this.ty - this.cy
-
-            this.cx += xDiff * 0.085
-            this.cx = Math.round(this.cx * 100) / 100
-
-            this.cy += yDiff * 0.085
-            this.cy = Math.round(this.cy * 100) / 100
-
-            this.diff = Math.max(
-                Math.abs(yDiff * 0.0001),
-                Math.abs(xDiff * 0.0001)
-            )
-
-            this.planes.length
-                && this.planes.forEach(plane =>
-                    plane.update(this.cx, this.cy, this.max, this.diff))
-
-            this.renderer.render(this.scene, this.camera)
-        }
-
-        onMouseMove = ({ clientX, clientY }) => {
-            if (!this.isDragging) return
-
-            this.tx = this.on.x + clientX * 1
-            this.ty = this.on.y - clientY * 1
-        }
-
-        onMouseDown = ({ clientX, clientY }) => {
-            if (this.isDragging) return
-
-            this.isDragging = true
-
-            this.on.x = this.tx - clientX * 1
-            this.on.y = this.ty + clientY * 1
-        }
-
-        onMouseUp = ({ clientX, clientY }) => {
-            if (!this.isDragging) return
-
-            this.isDragging = false
-        }
-
-        onWheel = (e) => {
-            const { mouse, firefox } = multipliers
-
-            this.wheel.x = e.wheelDeltaX || e.deltaX * -1
-            this.wheel.y = e.wheelDeltaY || e.deltaY * -1
-
-            if (isFirefox && e.deltaMode === 1) {
-                this.wheel.x *= firefox
-                this.wheel.y *= firefox
+                // Update our representations
+                moveArrayIndex(imgRep, imgRep.length - 1, 0);
+                moveArrayIndex(rowArray, rowArray.length - 1, 0);
             }
+        } else if (rowIndex > rowMidIndex) {
+            for (let i = rowMidIndex; i < rowIndex; i++) {
+                // Update the row's actual position
+                let rowY = gsap.getProperty(rowArray[rowArray.length - 1], "y");
 
-            this.wheel.y *= mouse
-            this.wheel.x *= mouse
+                if (rowArray.length % 2 === 1) { // Odd number of rows means we have to handle offset
+                    let row = rowArray[0];
+                    if (row.dataset.offset === "true") {
+                        gsap.set(row, { y: rowY + gutter + boxHeight, x: "-=" + boxWidth / 2 });
+                        row.dataset.offset = "false";
+                    } else {
+                        gsap.set(row, { y: rowY + gutter + boxHeight, x: "+=" + boxWidth / 2 });
+                        row.dataset.offset = "true";
+                    }
+                } else { // Equal number of rows; don't have to handle offset
+                    gsap.set(rowArray[0], { y: rowY + gutter + boxHeight });
+                }
 
-            this.tx += this.wheel.x
-            this.ty -= this.wheel.y
-        }
-
-        resize = () => {
-            ww = window.innerHeight
-            wh = window.innerWidth
-
-            const { bottom, right } = this.el.getBoundingClientRect()
-
-            this.max.x = right
-            this.max.y = bottom
-        }
-    }
-
-    /** PLANE **/
-    const loader = new THREE.TextureLoader()
-
-    const vertexShader = `
-precision mediump float;
-
-uniform float u_diff;
-
-varying vec2 vUv;
-
-void main(){
-  vec3 pos = position;
-  
-  pos.y *= 1. - u_diff;
-  pos.x *= 1. - u_diff;
-
-  vUv = uv;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.);;
-}
-`
-
-    const fragmentShader = `
-precision mediump float;
-
-uniform vec2 u_res;
-uniform vec2 u_size;
-
-uniform sampler2D u_texture;
-
-vec2 cover(vec2 screenSize, vec2 imageSize, vec2 uv) {
-  float screenRatio = screenSize.x / screenSize.y;
-  float imageRatio = imageSize.x / imageSize.y;
-
-  vec2 newSize = screenRatio < imageRatio 
-      ? vec2(imageSize.x * (screenSize.y / imageSize.y), screenSize.y)
-      : vec2(screenSize.x, imageSize.y * (screenSize.x / imageSize.x));
-  vec2 newOffset = (screenRatio < imageRatio 
-      ? vec2((newSize.x - screenSize.x) / 2.0, 0.0) 
-      : vec2(0.0, (newSize.y - screenSize.y) / 2.0)) / newSize;
-
-  return uv * screenSize / newSize + newOffset;
-}
-
-varying vec2 vUv;
-
-void main() {
-    vec2 uv = vUv;
-
-    vec2 uvCover = cover(u_res, u_size, uv);
-    vec4 texture = texture2D(u_texture, uvCover);
-	
-    gl_FragColor = texture;
-}
-`
-
-    const geometry = new THREE.PlaneBufferGeometry(1, 1, 1, 1)
-    const material = new THREE.ShaderMaterial({
-        fragmentShader,
-        vertexShader,
-    })
-
-    class Plane extends THREE.Object3D {
-
-        init(el, i) {
-            this.el = el
-
-            this.x = 0
-            this.y = 0
-
-            this.my = 1 - ((i % 5) * 0.1)
-
-            this.geometry = geometry
-            this.material = material.clone()
-
-            this.material.uniforms = {
-                u_texture: { value: 0 },
-                u_res: { value: new THREE.Vector2(1, 1) },
-                u_size: { value: new THREE.Vector2(1, 1) },
-                u_diff: { value: 0 }
+                // Update our representations
+                moveArrayIndex(imgRep, 0, imgRep.length - 1);
+                moveArrayIndex(rowArray, 0, rowArray.length - 1);
             }
-
-            this.texture = loader.load(this.el.dataset.src, (texture) => {
-                texture.minFilter = THREE.LinearFilter
-                texture.generateMipmaps = false
-
-                const { naturalWidth, naturalHeight } = texture.image
-                const { u_size, u_texture } = this.material.uniforms
-
-                u_texture.value = texture
-                u_size.value.x = naturalWidth
-                u_size.value.y = naturalHeight
-            })
-
-            this.mesh = new THREE.Mesh(this.geometry, this.material)
-            this.add(this.mesh)
-
-            this.resize()
         }
 
-        update = (x, y, max, diff) => {
-            const { right, bottom } = this.rect
-            const { u_diff } = this.material.uniforms
 
-            this.y = gsap.utils.wrap(
-                -(max.y - bottom),
-                bottom,
-                y * this.my
-            ) - this.yOffset
+        // Reposition the images as necessary
+        if (imgIndex < imgMidIndex) {
+            for (let rowNum = 0; rowNum < rows.length; rowNum++) { // Do it for every row
+                let row = imgRep[rowNum];
 
-            this.x = gsap.utils.wrap(
-                -(max.x - right),
-                right,
-                x
-            ) - this.xOffset
+                for (let i = imgIndex; i < imgMidIndex; i++) {
+                    // Update the images's actual position
+                    let imgX = gsap.getProperty(row[0], "x");
 
-            u_diff.value = diff
+                    gsap.set(row[row.length - 1], { x: imgX - gutter - boxWidth });
 
-            this.position.x = this.x
-            this.position.y = this.y
-        }
+                    // Update our representation
+                    moveArrayIndex(row, row.length - 1, 0);
+                }
+            }
+        } else if (imgIndex > imgMidIndex) {
+            for (let rowNum = 0; rowNum < rows.length; rowNum++) { // Do it for every row
+                let row = imgRep[rowNum];
 
-        resize() {
-            this.rect = this.el.getBoundingClientRect()
+                for (let i = imgMidIndex; i < imgIndex; i++) {
+                    // Update the images's actual position
+                    let imgX = gsap.getProperty(row[imgNum - 1], "x");
 
-            const { left, top, width, height } = this.rect
-            const { u_res, u_toRes, u_pos, u_offset } = this.material.uniforms
+                    gsap.set(row[0], { x: imgX + gutter + boxWidth });
 
-            this.xOffset = (left + (width / 2)) - (ww / 2)
-            this.yOffset = (top + (height / 2)) - (wh / 2)
-
-            this.position.x = this.xOffset
-            this.position.y = this.yOffset
-
-            u_res.value.x = width
-            u_res.value.y = height
-
-            this.mesh.scale.set(width, height, 1)
+                    // Update our representation
+                    moveArrayIndex(row, 0, row.length - 1);
+                }
+            }
         }
     }
 
-    new Core() 
+
+    function centerGrid() {
+        let bcr = lastCenteredElem.getBoundingClientRect();
+        let midX = bcr.x + bcr.width / 2;
+        let midY = bcr.y + bcr.height / 2;
+
+        let x = winMidX - midX;
+        let y = winMidY - midY;
+
+        gsap.to(containerSelector, {
+            ease: "sine.inOut",
+            duration: 0.7,
+            x: "+=" + x,
+            y: "+=" + y
+        });
+    }
+
+    function updateCenterElem() {
+        let elems = document.elementsFromPoint(winMidX, winMidY);
+        elems.forEach(elem => {
+            if (elem.matches(imageSelector) && !lastCenteredElem.isSameNode(elem)) {
+                lastCenteredElem = elem;
+
+                checkPositions(lastCenteredElem);
+            }
+        });
+    }
+
+
+
+    const containerId = "imageContainer";
+    const containerSelector = "#" + containerId;
+    const rowClass = "row"
+    const rowSelector = "." + rowClass;
+    const imageClass = "sliderImage";
+    const imageSelector = "." + imageClass;
+    const imgURLArray = null;
+    const imgURLArrayLength = imgURLArray ? imgURLArray.length : -1;
+    const rowNum = 9;
+    const imgNum = 15;
+
+    const useInertia = true;
+    const useCenterGrid = false;
+
+    let rows,
+        imgMidIndex,
+        rowMidIndex;
+    const rowArray = [];
+    const imgRep = [];
+
+    let boxWidth,
+        boxHeight,
+        gutter,
+        horizSpacing,
+        vertSpacing,
+        horizOffset,
+        vertOffset,
+        winMidX,
+        winMidY,
+        lastCenteredElem;
+
+    function createImageGrid() {
+        for (let y = 0; y < rowNum; y++) {
+            let row = document.createElement("div");
+            row.className = rowClass;
+            for (let x = 0; x < imgNum; x++) {
+                let image = document.createElement("div");
+                image.className = imageClass;
+                row.appendChild(image);
+            }
+            document.querySelector(containerSelector).appendChild(row);
+
+            // Add the images to our representation
+            imgRep.push(gsap.utils.toArray(row.querySelectorAll(imageSelector)));
+        }
+
+        rows = document.querySelectorAll(rowSelector),
+            imgMidIndex = Math.floor(imgNum / 2),
+            rowMidIndex = Math.floor(rowNum / 2);
+    }
+
+    function createMask() {
+        let mask = document.createElement("div");
+        mask.className = "mask";
+        document.body.appendChild(mask);
+
+        gsap.set(mask, {
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100vw",
+            height: "100vh",
+            zIndex: 9999,
+            // backgroundColor: "green",
+            // opacity: "0.2",
+        });
+    }
+
+    function resize() {
+        winMidX = innerWidth / 2;
+        winMidY = innerHeight / 2;
+        boxWidth = innerWidth * 0.35;
+        boxHeight = innerHeight * 0.35;
+        gutter = innerWidth * 0.05;
+        horizSpacing = boxWidth + gutter;
+        vertSpacing = boxHeight + gutter;
+        horizOffset = -(imgMidIndex * horizSpacing + boxWidth / 2) + winMidX;
+        vertOffset = -(rowMidIndex * vertSpacing + boxHeight / 2) + winMidY;
+
+        // Reset our container and rows
+        gsap.set(containerSelector, { x: 0, y: 0 });
+
+        rows.forEach(function (row, i) {
+            gsap.set(row, {
+                attr: {
+                    "data-offset": function () {
+                        if (i % 2 === 0) return false;
+                        else return true;
+                    }
+                },
+                x: function () {
+                    if (i % 2 === 0)
+                        return horizOffset;
+                    else
+                        return horizOffset - boxWidth / 2;
+                },
+                y: function () {
+                    return i * vertSpacing + vertOffset;
+                },
+            });
+
+            gsap.set(row.querySelectorAll(imageSelector), {
+                width: boxWidth,
+                height: boxHeight,
+                x: function (index) {
+                    return index * horizSpacing;
+                }
+            });
+
+            // Update our representation of the rows
+            rowArray[i] = row;
+        });
+    }
+
+    function setStyles() {
+        gsap.set("body", {
+            margin: 0,
+            overflow: "hidden"
+        });
+
+        const randImgSize = Math.floor(Math.max(innerWidth, innerHeight) / 3);
+        gsap.set(imageSelector, {
+            backgroundImage: function (index) {
+                if (imgURLArray) {
+                    return imgURLArray[index % imgURLArrayLength];
+                } else
+                    return `url(https://picsum.photos/${randImgSize}/${randImgSize}?random=${index})`;
+            },
+            position: "absolute",
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            top: 0,
+            left: 0
+        });
+
+        gsap.set(rowSelector, {
+            position: "absolute"
+        });
+    }
+
+    function createDraggable() {
+        let options = {
+            trigger: ".mask",
+            dragResistance: 0.4,
+            resistance: 400,
+            onDrag: updateCenterElem,
+        }
+
+        if (useInertia) {
+            options.inertia = true;
+            options.onThrowUpdate = updateCenterElem;
+
+            if (useCenterGrid) {
+                options.onThrowComplete = centerGrid;
+            }
+        } else if (useCenterGrid) { // No inertia
+            options.onDragEnd = centerGrid;
+        }
+
+        return Draggable.create(containerSelector, options);
+    }
+
+    function init() {
+        gsap.set(containerSelector, { willChange: "transform" });
+
+        createImageGrid();
+        createMask();
+        lastCenteredElem = document.querySelectorAll(imageSelector)[(rowMidIndex - 1) * imgNum + imgMidIndex];
+
+        createDraggable();
+
+        setStyles();
+
+        resize();
+        window.addEventListener("resize", resize);
+    }
+
+    init();
+
 </script>
 
 </html>
