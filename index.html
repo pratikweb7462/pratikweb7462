@@ -233,7 +233,7 @@
 
             this.planes.length
                 && this.planes.forEach(plane =>
-                    plane.update(this.cx, this.cy, this.max, this.diff))
+                    plane.update(this.cx, this.cy, this.max, 0))
 
             this.renderer.render(this.scene, this.camera)
         }
